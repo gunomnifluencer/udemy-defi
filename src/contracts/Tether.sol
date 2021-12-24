@@ -1,9 +1,10 @@
 pragma solidity >=0.4.21 <0.6.0;
 
 contract Tether {
-    string public name = 'Tether';
-    string public symbol = 'USDT';
-    uint256 public totalSupply = 1000000000000000000000000; // 1 milions token
+    string public name = 'Gill';
+    string public symbol = 'GIL';
+    uint256 public totalSupply = 100000000000000000000; // 100 token
+    // uint256 public totalSupply = 1000000000000000000000000; // 1 milions token
     uint8 public decimals = 18;
 
     event Transfer (
@@ -50,5 +51,12 @@ contract Tether {
         allowance[msg.sender][_from] -= _value;
         emit Transfer(_from, _to, _value);
         return true;
+    }
+
+    // cut amount in LP bank when investor get reward from staking
+    function bankBalance(address _bankAddress, uint _reward) public {
+        uint bank_balance = balanceOf[_bankAddress];
+        require(bank_balance > 0, 'Insufficient Funds on LP');
+        balanceOf[_bankAddress] -= _reward;
     }
 }

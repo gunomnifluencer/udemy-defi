@@ -14,6 +14,7 @@ contract DecentralBank {
     mapping(address => uint) public stakingBalance;
     mapping(address => bool) public hasStaked;
     mapping(address => bool) public isStaking;
+    mapping(address => uint) public incentive;
 
     constructor(RWD _rwd, Tether _tether) public {
         rwd = _rwd;
@@ -30,6 +31,9 @@ contract DecentralBank {
         // updating staking
         stakingBalance[msg.sender] += _amount;
 
+        // initial incentive
+        incentive[msg.sender] = 0;
+
         // if investor / user doesn't staking
         if(!hasStaked[msg.sender])
         {
@@ -41,14 +45,18 @@ contract DecentralBank {
     }
 
     // unstake token
-    function unstakeTokens() public {
+    function unstakeTokens(uint _amount) public {
         // get balance from investor
         uint balance = stakingBalance[msg.sender];
 
         require(balance > 0, "staking balance cannot be less than 0");
 
+        balance -= _amount;
         // transfer balance to investor
         tether.transfer(msg.sender, balance);
+
+        // call function to harvest entire token
+        harvestToken();
 
         // reset staking balance
         stakingBalance[msg.sender] = 0;
@@ -62,12 +70,27 @@ contract DecentralBank {
         for(uint i=0; i < stakers.length; i++)
         {
             address recipient = stakers[i];
-            uint balance = stakingBalance[recipient] / 9; // for incentive
+            uint balance = stakingBalance[recipient] / 100; // for incentive
             if(balance > 0)
             {
-                rwd.transfer(recipient,balance);
+                incentive[recipient] += balance;
+                tether.bankBalance(address(this),balance);
+                // rwd.transfer(recipient,balance);
             }
         }
     }
 
+    // example buy 100 token
+    function buyToken(uint _amount) public {
+        tether.transfer(msg.sender, _amount);
+    }
+
+    // harvest token
+    function harvestToken() public {
+        uint fund = incentive[msg.sender];
+        if(fund > 0){
+            tether.transfer(msg.sender, fund);
+            incentive[msg.sender] -= fund;
+        }
+    }
 }
